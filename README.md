@@ -1,1 +1,2 @@
-# Tools-api-rest
+#Tools App
+Proyecto final del curso fullstack impartido por Bictia. La aplicación permite que un usuario conecte con ferreterias, teniendo en cuenta las ubicaciones mas cercanas y la disponibilidad de productos.
