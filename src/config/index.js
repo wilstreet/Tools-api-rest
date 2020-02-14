@@ -9,11 +9,11 @@ if (!envFound) {
 }
 
 module.exports = {
-  port: +process.env.port || 5000,
+  port: +process.env.PORT,
   api: {
     prefix: '/api',
   },
   firebase: {
-    databaseURL: "https://test-varios-d68c7.firebaseio.com",
+    databaseURL: process.env.DATABASE_URL
   },
 }
