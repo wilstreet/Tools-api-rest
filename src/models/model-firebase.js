@@ -30,10 +30,11 @@ function getElementById(collection, id) {
 
 function createElement(collection, data) {
   return new Promise((resolve, reject) => {
-    db.collection(collection).add({
+    const element = {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       ...data,
-    })
+    }
+    db.collection(collection).add(element)
       .then(() => resolve(element))
       .catch(err => reject(err));
   });
@@ -45,8 +46,11 @@ function updateElement(collection, id, data) {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       ...data,
     })
-      .then(() => resolve())
-      .catch(err => reject(err));
+      .then(() => resolve(true))
+      .catch(err => {
+        if (err.code === 5) resolve(false);
+        reject(err)
+      });
   });
 }
 
@@ -54,7 +58,9 @@ function deleteElement(collection, id) {
   return new Promise((resolve, reject) => {
     db.collection(collection).doc(id).delete()
       .then(() => resolve())
-      .catch(err => reject(err));
+      .catch(err => {
+        reject(err)
+      });
   });
 }
 

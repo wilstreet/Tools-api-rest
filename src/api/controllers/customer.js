@@ -3,13 +3,21 @@ const {
   createElement,
   getElementById,
   updateElement,
-  deleteElement
+  deleteElement,
 } = require('../../models/model-firebase');
 
 function getCustomers(req, res) {
   getAll('customers')
     .then(customers => res.json(customers))
-    .catch(err => console.log(err));
+    .catch(err => {
+      console.error(err.stack)
+      res.status(500).json({
+        error: {
+          code: 500,
+          message: 'Internal server error'
+        }
+      });
+    });
 }
 
 function createCustomer(req, res) {
@@ -25,19 +33,40 @@ function createCustomer(req, res) {
     username,
     email,
   }).then(customer => res.status(201).json(customer))
-    .catch(err => console.log(err));
+    .catch(err => {
+      console.error(err.stack)
+      res.status(500).json({
+        error: {
+          code: 500,
+          message: 'Internal server error'
+        }
+      });
+    });
 }
 
 function getCustomerById(req, res) {
   getElementById('customers', req.params.id)
     .then(customer => {
       if (!customer) {
-        res.status(404).send('Customer not exist');
+        res.status(404).json({
+          error: {
+            code: 404,
+            message: `Customer with id: ${req.params.id} not exist`
+          }
+        });
         return;
       }
       res.json(customer);
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      console.error(err.stack)
+      res.status(500).json({
+        error: {
+          code: 500,
+          message: 'Internal server error'
+        }
+      });
+    });
 }
 
 function updateCustomer(req, res) {
@@ -48,14 +77,43 @@ function updateCustomer(req, res) {
     }
   }
   updateElement('customers', req.params.id, updatedCustomer)
-    .then(() => res.sendStatus(204))
-    .catch(err => console.log(err));
+    .then(isExist => {
+      if (!isExist) {
+        res.status(404).json({
+          error: {
+            code: 404,
+            message: `Customer with id: ${req.params.id} not exist`
+          }
+        });
+        return;
+      }
+      res.sendStatus(204);
+    })
+    .catch(err => {
+      console.error(err.stack)
+      res.status(500).json({
+        error: {
+          code: 500,
+          message: 'Internal server error'
+        }
+      });
+    });
 }
 
 function deleteCustomer(req, res) {
   deleteElement('customers', req.params.id)
-    .then(() => res.sendStatus(204))
-    .catch(err => console.log(err));
+    .then(() => {
+      res.sendStatus(204);
+    })
+    .catch(err => {
+      console.error(err.stack)
+      res.status(500).json({
+        error: {
+          code: 500,
+          message: 'Internal server error'
+        }
+      });
+    });
 }
 
 module.exports = {
