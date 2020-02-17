@@ -6,114 +6,66 @@ const {
   deleteElement,
 } = require('../../models/model-firebase');
 
-function getCustomers(req, res) {
-  getAll('customers')
-    .then(customers => res.json(customers))
-    .catch(err => {
-      console.error(err.stack)
-      res.status(500).json({
-        error: {
-          code: 500,
-          message: 'Internal server error'
-        }
-      });
-    });
+async function getCustomers(req, res, next) {
+  try {
+    const customers = await getAll('customers');
+    res.json(customers);
+  } catch(err) {
+    return next(err);
+  }
 }
 
-function createCustomer(req, res) {
+async function createCustomer(req, res, next) {
   const {
     firstName,
     lastName,
     username,
     email,
   } = req.body;
-  createElement('customers', {
-    firstName,
-    lastName,
-    username,
-    email,
-  }).then(customer => res.status(201).json(customer))
-    .catch(err => {
-      console.error(err.stack)
-      res.status(500).json({
-        error: {
-          code: 500,
-          message: 'Internal server error'
-        }
-      });
+  try {
+    const newCustomer = await createElement('customers', {
+      firstName,
+      lastName,
+      username,
+      email,
     });
+    res.status(201).json(newCustomer);
+  } catch (err) {
+    next(err);
+  }
 }
 
-function getCustomerById(req, res) {
-  getElementById('customers', req.params.id)
-    .then(customer => {
-      if (!customer) {
-        res.status(404).json({
-          error: {
-            code: 404,
-            message: `Customer with id: ${req.params.id} not exist`
-          }
-        });
-        return;
-      }
-      res.json(customer);
-    })
-    .catch(err => {
-      console.error(err.stack)
-      res.status(500).json({
-        error: {
-          code: 500,
-          message: 'Internal server error'
-        }
-      });
-    });
+async function getCustomerById(req, res, next) {
+  try {
+    const customer = await getElementById('customers', req.params.id);
+    res.json(customer);
+  } catch (err) {
+    next(err);
+  }
 }
 
-function updateCustomer(req, res) {
+async function updateCustomer(req, res, next) {
   const updatedCustomer = {};
   for (let prop in req.body) {
     if (prop === 'firstName' || prop === 'lastName' || prop === 'username' || prop === 'email') {
       updatedCustomer[prop] = req.body[prop];
     }
   }
-  updateElement('customers', req.params.id, updatedCustomer)
-    .then(isExist => {
-      if (!isExist) {
-        res.status(404).json({
-          error: {
-            code: 404,
-            message: `Customer with id: ${req.params.id} not exist`
-          }
-        });
-        return;
-      }
-      res.sendStatus(204);
-    })
-    .catch(err => {
-      console.error(err.stack)
-      res.status(500).json({
-        error: {
-          code: 500,
-          message: 'Internal server error'
-        }
-      });
-    });
+  try {
+    await updateElement('customers', req.params.id, updatedCustomer);
+    res.sendStatus(204);
+  } catch(err) {
+    next(err);
+  }
 }
 
-function deleteCustomer(req, res) {
-  deleteElement('customers', req.params.id)
-    .then(() => {
-      res.sendStatus(204);
-    })
-    .catch(err => {
-      console.error(err.stack)
-      res.status(500).json({
-        error: {
-          code: 500,
-          message: 'Internal server error'
-        }
-      });
-    });
+async function deleteCustomer(req, res, next) {
+  try {
+    await deleteElement('customers', req.params.id);
+    res.sendStatus(204);
+  } catch(err) {
+    next(err);
+  } 
 }
 
 module.exports = {

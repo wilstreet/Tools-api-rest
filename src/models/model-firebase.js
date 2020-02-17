@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const serviceAccount = require('../../private/test-varios-d68c7-firebase-adminsdk-as8jd-67df4e00f6.json');
 const { firebase } = require('../config');
+const UsefulError = require('../utils/useful-error');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -9,59 +10,63 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-function getAll(collection) {
-  return new Promise((resolve, reject) => {
-    db.collection(collection).get()
-      .then(querySnapshot => {
-        const parseData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        resolve(parseData);
-      })
-      .catch(err => reject(err));
-  });
+async function getAll(collection) {
+  try {
+    const response = await db.collection(collection).get();
+    const parseData = response.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return parseData;
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work!!');
+  }
 };
 
-function getElementById(collection, id) {
-  return new Promise((resolve, reject) => {
-    db.collection(collection).doc(id).get()
-      .then(doc => doc.exists ? resolve(doc.data()) : resolve(null))
-      .catch(err => reject(err));
-  });
-}
-
-function createElement(collection, data) {
-  return new Promise((resolve, reject) => {
-    const element = {
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...data,
+async function getElementById(collection, id) {
+  try {
+    const doc = await db.collection(collection).doc(id).get();
+    if (!doc.exists) {
+      throw new UsefulError('The element not exist!!', 404);
     }
-    db.collection(collection).add(element)
-      .then(() => resolve(element))
-      .catch(err => reject(err));
-  });
+    return doc.data();
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work!!');
+  }
 }
 
-function updateElement(collection, id, data) {
-  return new Promise((resolve, reject) => {
-    db.collection(collection).doc(id).update({
+async function createElement(collection, data) {
+  const element = {
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    ...data,
+  }
+  try {
+    await db.collection(collection).add(element);
+    return element;
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work!!');
+  }
+}
+
+async function updateElement(collection, id, data) {
+  try {
+    await db.collection(collection).doc(id).update({
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       ...data,
-    })
-      .then(() => resolve(true))
-      .catch(err => {
-        if (err.code === 5) resolve(false);
-        reject(err)
-      });
-  });
+    });
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work!!');
+  }
 }
 
-function deleteElement(collection, id) {
-  return new Promise((resolve, reject) => {
-    db.collection(collection).doc(id).delete()
-      .then(() => resolve())
-      .catch(err => {
-        reject(err)
-      });
-  });
+async function deleteElement(collection, id) {
+  try {
+    await db.collection(collection).doc(id).delete();
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work!!');
+  }
 }
 
 module.exports = {
