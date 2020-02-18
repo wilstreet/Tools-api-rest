@@ -1,10 +1,9 @@
 class UsefulError extends Error {
-  constructor(name, httpStatusCode = 500, context, ...params) {
-    super(...params);
-
-    this.name = name;
+  constructor(message, httpStatusCode = 500) {
+    super();
+    
+    this.message = message;
     this.httpStatusCode = httpStatusCode;
-    this.context = context;
   }
 }
 

@@ -22,15 +22,20 @@ async function getAll(collection) {
 };
 
 async function getElementById(collection, id) {
+  let validateElement = true;
   try {
     const doc = await db.collection(collection).doc(id).get();
     if (!doc.exists) {
-      throw new UsefulError('The element not exist!!', 404);
+      validateElement = doc.exists;
+      throw new Error;
     }
     return doc.data();
   } catch(err) {
     console.log(err);
-    throw new UsefulError('The database not work!!');
+    if (!validateElement) {
+      throw new UsefulError('The element not exist!!', 404);
+    }
+    throw new UsefulError('The database not work!!', 500);
   }
 }
 

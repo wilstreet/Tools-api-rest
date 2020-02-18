@@ -3,7 +3,7 @@ const {
   getElementById,
   createElement,
   updateElement,
-  deleteElement
+  deleteElement,
 } = require('../../models/model-firebase');
 
 async function getAllies(req, res, next) {
@@ -15,20 +15,51 @@ async function getAllies(req, res, next) {
   }
 }
 
-function getAllyById(req, res, next) {
-  
+async function createAlly(req, res, next) {
+  const {
+    firstName
+  } = req.body;
+  try {
+    const newAlly = await createElement('allies', {
+      firstName
+    });
+    res.status(201).json(newAlly);
+  } catch(err) {
+    next(err);
+  }
 }
 
-function createAlly(req, res, next) {
-
+async function getAllyById(req, res, next) {
+  try {
+    const ally = await getElementById('allies', req.params.id);
+    res.json(ally);
+  } catch(err) {
+    next(err);
+  }
 }
 
-function updateAlly(req, res, next) {
-
+async function updateAlly(req, res, next) {
+  const updatedAlly = {};
+  for (let prop in req.body) {
+    if (prop === 'firstName') {
+      updatedAlly[prop] = req.body[prop];
+    }
+  }
+  try {
+    await updateElement('allies', req.params.id, updatedAlly);
+    res.sendStatus(204);
+  } catch(err) {
+    next(err);
+  }
 }
 
-function deleteAlly(req, res, next) {
-
+async function deleteAlly(req, res, next) {
+  try {
+    await deleteElement('allies', req.params.id);
+    res.sendStatus(204);
+  } catch(err) {
+    next(err);
+  }
 }
 
 module.exports = {
