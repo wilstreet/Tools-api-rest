@@ -1,11 +1,9 @@
 const { Router } = require('express');
-const customers = require('./routes/customer');
-const allies = require('./routes/ally');
+const users = require('./routes/user');
 
 module.exports = () => {
   const app = Router();
-  customers(app);
-  allies(app);
-
+  users(app);
+  
   return app;
 }

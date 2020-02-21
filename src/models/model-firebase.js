@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../../private/test-varios-d68c7-firebase-adminsdk-as8jd-67df4e00f6.json');
+const serviceAccount = require('../.././private/firebase-admin.json');
 const { firebase } = require('../config');
 const UsefulError = require('../utils/useful-error');
 
@@ -74,10 +74,39 @@ async function deleteElement(collection, id) {
   }
 }
 
+async function getExistingField(collection, field, value) {
+  try {
+    const snapshot = await db.collection(collection)
+      .where(field, "==", value).get();
+    if (snapshot.empty) {
+      return null;
+    }
+    return snapshot.docs.map(doc => doc.data())[0];
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work!!');
+  }
+} 
+
+async function getUserByEmailOrUsername(collection, emailOrUsername) {
+  const snapshotByUsername = await getExistingField(collection, 'username', emailOrUsername);
+  console.log('debug', snapshotByUsername)
+  if (snapshotByUsername) {
+    return snapshotByUsername;
+  }
+  const snapshotByEmail = await getExistingField(collection, 'email', emailOrUsername);
+  if (snapshotByEmail) {
+    return snapshotByEmail;
+  }
+  return null;
+}
+
 module.exports = {
   getAll,
   getElementById,
   createElement,
   updateElement,
   deleteElement,
+  getUserByEmailOrUsername,
+  getExistingField,
 };
