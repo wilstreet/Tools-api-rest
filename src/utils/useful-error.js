@@ -1,3 +1,4 @@
+// Http Status Code errors
 class UsefulError extends Error {
   constructor(message, httpStatusCode = 500) {
     super();

@@ -8,6 +8,7 @@ const {
   loginUser,
   validateField,
 } = require('../controllers/user');
+const validateAuthentication = require('../middlewares/authentication');
 
 const router = Router();
 
@@ -15,7 +16,7 @@ module.exports = app => {
   app.use('/users', router);
 
   router.route('/')
-    .get(getUsers)
+    .get(validateAuthentication, getUsers);
 
   router.route('/validate/:field')
     .post(validateField);
@@ -27,7 +28,7 @@ module.exports = app => {
     .post(loginUser);
 
   router.route('/:id')
-    .get(getUserById)
-    .put(updateUser)
-    .delete(deleteUser);
+    .get(validateAuthentication, getUserById)
+    .put(validateAuthentication, updateUser)
+    .delete(validateAuthentication, deleteUser);
 };

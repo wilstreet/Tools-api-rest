@@ -50,17 +50,15 @@ async function createUser(req, res, next) {
 
 async function loginUser(req, res, next) {
   passport.authenticate('local', { session: false }, (err, user) => {
+    console.log(typeof jwtConfig.expire)
     if (err || !user) {
-      next(new UsefulError('Username or password not correct', 404));
+      next(new UsefulError('Username or password not correct', 403));
     } else {
-      const payload = {
+      const token = jwt.sign({
         sub: user.id,
-        exp: jwtConfig.expire,
-        username: user.username
-      };
-      const token = jwt.sign(JSON.stringify(payload), jwtConfig.secretKey, { 
-        algorithm: jwtConfig.algorithm
-      });
+        role: user.role,
+        exp: Math.floor(Date.now() / 1000) + (60 * 60)
+      }, jwtConfig.secretKey);
       res.json({ token });
     }
   })(req, res);
@@ -69,6 +67,9 @@ async function loginUser(req, res, next) {
 async function getUserById(req, res, next) {
   try {
     const user = await getElementById('users', req.params.id);
+    if (!user) {
+      throw new UsefulError('The element not exist!!', 404);
+    }
     res.json(user);
   } catch (err) {
     next(err);

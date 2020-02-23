@@ -3,11 +3,12 @@ const serviceAccount = require('../.././private/firebase-admin.json');
 const { firebase } = require('../config');
 const UsefulError = require('../utils/useful-error');
 
+// Admin firebase initialize
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: firebase.databaseURL
 });
-
+// Firestore reference
 const db = admin.firestore();
 
 async function getAll(collection) {
@@ -22,19 +23,14 @@ async function getAll(collection) {
 };
 
 async function getElementById(collection, id) {
-  let validateElement = true;
   try {
     const doc = await db.collection(collection).doc(id).get();
     if (!doc.exists) {
-      validateElement = doc.exists;
-      throw new Error;
+      return null;
     }
-    return doc.data();
+    return { id: doc.id, ...doc.data() };
   } catch(err) {
     console.log(err);
-    if (!validateElement) {
-      throw new UsefulError('The element not exist!!', 404);
-    }
     throw new UsefulError('The database not work!!', 500);
   }
 }
@@ -81,7 +77,7 @@ async function getExistingField(collection, field, value) {
     if (snapshot.empty) {
       return null;
     }
-    return snapshot.docs.map(doc => doc.data())[0];
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))[0];
   } catch(err) {
     console.log(err);
     throw new UsefulError('The database not work!!');
@@ -90,7 +86,6 @@ async function getExistingField(collection, field, value) {
 
 async function getUserByEmailOrUsername(collection, emailOrUsername) {
   const snapshotByUsername = await getExistingField(collection, 'username', emailOrUsername);
-  console.log('debug', snapshotByUsername)
   if (snapshotByUsername) {
     return snapshotByUsername;
   }

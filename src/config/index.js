@@ -18,7 +18,6 @@ module.exports = {
   },
   jwtConfig: {
     secretKey: process.env.SECRET_KEY,
-    algorithm: process.env.ALGORITHM_JWT,
-    expire: process.env.EXPIRE_TOKEN,
+    algorithm: process.env.ALGORITHM_JWT
   }  
 }

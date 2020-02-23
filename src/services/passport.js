@@ -4,9 +4,9 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const argon2 = require('argon2');
 const { ExtractJwt } = require('passport-jwt');
 const { jwtConfig } = require('../config');
+const { getUserByEmailOrUsername, getElementById } = require('../models/model-firebase');
 
-const { getUserByEmailOrUsername } = require('../models/model-firebase');
-
+// Local strategy
 passport.use(new LocalStrategy({
   usernameField: 'username',
   passwordFiled: 'password',
@@ -18,15 +18,20 @@ passport.use(new LocalStrategy({
   if (!await argon2.verify(user.password, password)) {
     return done(null, false);
   }
-  return done(null, true);
+  return done(null, user);
 }));
 
+// Jwt strategy
 passport.use(new JwtStrategy({
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: jwtConfig.secretKey,
   algorithms: [jwtConfig.algorithm]
-}, (payload, done) => {
-  console.log(payload);
+}, async (payload, done) => {
+  const user = await getElementById('users', payload.sub);
+  if (user) {
+    return done(null, user);
+  }
+  return done(null, false);
 }));
 
 module.exports = app => {
