@@ -96,6 +96,60 @@ async function getUserByEmailOrUsername(collection, emailOrUsername) {
   return null;
 }
 
+// Chat features
+async function getIdConversation(idCustomer, idAlly) {
+  try {
+    const snapshot = await db.collection('messages')
+      .where('idCustomer', '==', idCustomer)
+      .where('idAlly', '==', idAlly)
+      .get();
+    if (snapshot.empty) {
+      return null;
+    }
+    return snapshot.docs.map(doc => doc.id)[0];
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work');
+  }
+}
+
+async function getAllMessages(idCustomer, idAlly) {
+  try {
+    const idConversation = await getIdConversation(idCustomer, idAlly);
+    if (!idConversation) {
+      return null;
+    }
+    const messages =  await db.collection('messages').doc(idConversation).get();
+    if (messages.empty) {
+      return [];
+    }
+    return { messages: messages.data().messages };
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work');
+  }
+}
+
+async function addMessage(idCustomer, idAlly, messages) {
+  const element = {
+    idCustomer,
+    idAlly,
+    messages
+  }
+  try {
+    const idConversation = await getIdConversation(idCustomer, idAlly);
+    if (!idConversation) {
+      await db.collection('messages').add(element);
+    } else {
+      await db.collection('messages').doc(idConversation).update({ messages });
+    }
+    return element;
+  } catch(err) {
+    console.log(err);
+    throw new UsefulError('The database not work');
+  }
+};
+
 module.exports = {
   getAll,
   getElementById,
@@ -104,4 +158,6 @@ module.exports = {
   deleteElement,
   getUserByEmailOrUsername,
   getExistingField,
+  getAllMessages,
+  addMessage
 };
