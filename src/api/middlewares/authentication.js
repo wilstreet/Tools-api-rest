@@ -4,7 +4,6 @@ const UsefulError = require('../.././utils/useful-error');
 // JWT Authentication middleware
 module.exports = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err, user, info) => {
-    console.log('user',user)
     if (info) {
       return next(new UsefulError(info.message, 401));
     }

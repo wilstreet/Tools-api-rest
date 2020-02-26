@@ -1,8 +1,8 @@
 const argon2 = require('argon2');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const { jwtConfig } = require('../../config');
-const UsefulError = require('../../utils/useful-error');
+const { jwtConfig } = require('../.././config');
+const UsefulError = require('../.././utils/useful-error');
 const {
   getAll,
   createElement,
@@ -10,11 +10,13 @@ const {
   updateElement,
   deleteElement,
   getExistingField,
-} = require('../../models/model-firebase');
+} = require('../.././models/model-firebase');
+
+const COLLECTION_NAME = 'users';
 
 async function getUsers(req, res, next) {
   try {
-    const users = await getAll('users');
+    const users = await getAll(COLLECTION_NAME);
     res.json(users);
   } catch(err) {
     return next(err);
@@ -30,34 +32,35 @@ async function createUser(req, res, next) {
     password,
     role
   } = req.body;
+  // Validate required fields
   if (!firstName || !lastName || !username || !email || !password || !role) {
-    next(new UsefulError('Incomplete form data', 400));
+    return next(new UsefulError('Incomplete form data', 400));
   }
   try {
-    const newUser = await createElement('users', {
+    const newUser = await createElement(COLLECTION_NAME, {
       firstName,
       lastName,
       username,
       email,
       password: await argon2.hash(password),
       role,
+      online: false,
     });
     res.status(201).json(newUser);
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
 async function loginUser(req, res, next) {
   passport.authenticate('local', { session: false }, (err, user) => {
-    console.log(typeof jwtConfig.expire)
     if (err || !user) {
-      next(new UsefulError('Username or password not correct', 403));
+      return next(new UsefulError('Username or password not correct', 403));
     } else {
       const token = jwt.sign({
         sub: user.id,
         role: user.role,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60)
+        exp: Math.floor(Date.now() / 1000) + (600 * 600)
       }, jwtConfig.secretKey);
       res.json({ token });
     }
@@ -66,53 +69,54 @@ async function loginUser(req, res, next) {
 
 async function getUserById(req, res, next) {
   try {
-    const user = await getElementById('users', req.params.id);
+    const user = await getElementById(COLLECTION_NAME, req.params.id);
     if (!user) {
-      throw new UsefulError('The element not exist!!', 404);
+     return next(new UsefulError('The user not exist!!', 404));
     }
     res.json(user);
   } catch (err) {
-    next(err);
+    return next(err);
   }
 }
 
 async function updateUser(req, res, next) {
   const updatedUser = {};
+  // Validate the fields to update
   for (let prop in req.body) {
     if (prop === 'firstName' || prop === 'lastName' || prop === 'username' || prop === 'email') {
       updatedUser[prop] = req.body[prop];
     }
   }
   try {
-    await updateElement('users', req.params.id, updatedUser);
+    await updateElement(COLLECTION_NAME, req.params.id, updatedUser);
     res.sendStatus(204);
   } catch(err) {
-    next(err);
+    return next(err);
   }
 }
 
 async function deleteUser(req, res, next) {
   try {
-    await deleteElement('users', req.params.id);
+    await deleteElement(COLLECTION_NAME, req.params.id);
     res.sendStatus(204);
   } catch(err) {
-    next(err);
+    return next(err);
   } 
 }
 
 async function validateField(req, res, next) {
   const { field } = req.body;
   if (!field) {
-    next(new UsefulError(`Incomplete field: ${req.params.field}`, 400));
+    return next(new UsefulError(`Incomplete field: ${req.params.field}`, 400));
   }
   try {
-    const fieldValue = await getExistingField('users',req.params.field, field);
+    const fieldValue = await getExistingField(COLLECTION_NAME, req.params.field, field);
     if (fieldValue) {
       return next(new UsefulError(`Field ${req.params.field} already exists`, 400));
     }
     res.json({ message: 'The field does not exist you can use it' });
   } catch(err) {
-    next(err);
+    return next(err);
   }
 }
 

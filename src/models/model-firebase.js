@@ -11,14 +11,23 @@ admin.initializeApp({
 // Firestore reference
 const db = admin.firestore();
 
-async function getAll(collection) {
+// CRUD
+async function getAll(collection, where) {
   try {
-    const response = await db.collection(collection).get();
-    const parseData = response.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    return parseData;
+    if (!where) {
+      const response = await db.collection(collection).get();
+      const parseData = response.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return parseData;
+    } else {
+      const { field, value } = where;
+      const response = await db.collection(collection)
+        .where(field, '==', value)
+        .get();
+      const parseData = response.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return parseData;
+    }
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work!!');
+    throw new UsefulError(err);
   }
 };
 
@@ -30,8 +39,7 @@ async function getElementById(collection, id) {
     }
     return { id: doc.id, ...doc.data() };
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work!!', 500);
+    throw new UsefulError(err);
   }
 }
 
@@ -44,8 +52,7 @@ async function createElement(collection, data) {
     await db.collection(collection).add(element);
     return element;
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work!!');
+    throw new UsefulError(err);
   }
 }
 
@@ -56,8 +63,7 @@ async function updateElement(collection, id, data) {
       ...data,
     });
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work!!');
+    throw new UsefulError(err);
   }
 }
 
@@ -65,11 +71,11 @@ async function deleteElement(collection, id) {
   try {
     await db.collection(collection).doc(id).delete();
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work!!');
+    throw new UsefulError(err);
   }
 }
 
+// Others features
 async function getExistingField(collection, field, value) {
   try {
     const snapshot = await db.collection(collection)
@@ -79,11 +85,11 @@ async function getExistingField(collection, field, value) {
     }
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))[0];
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work!!');
+    throw new UsefulError(err);
   }
 } 
 
+// User features
 async function getUserByEmailOrUsername(collection, emailOrUsername) {
   const snapshotByUsername = await getExistingField(collection, 'username', emailOrUsername);
   if (snapshotByUsername) {
@@ -108,8 +114,7 @@ async function getIdConversation(idCustomer, idAlly) {
     }
     return snapshot.docs.map(doc => doc.id)[0];
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work');
+    throw new UsefulError(err);
   }
 }
 
@@ -125,8 +130,7 @@ async function getAllMessages(idCustomer, idAlly) {
     }
     return { messages: messages.data().messages };
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work');
+    throw new UsefulError(err);
   }
 }
 
@@ -145,8 +149,7 @@ async function addMessage(idCustomer, idAlly, messages) {
     }
     return element;
   } catch(err) {
-    console.log(err);
-    throw new UsefulError('The database not work');
+    throw new UsefulError(err);
   }
 };
 
@@ -159,5 +162,5 @@ module.exports = {
   getUserByEmailOrUsername,
   getExistingField,
   getAllMessages,
-  addMessage
+  addMessage,
 };
