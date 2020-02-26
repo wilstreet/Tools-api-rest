@@ -13,6 +13,7 @@ const {
 } = require('../.././models/model-firebase');
 
 const COLLECTION_NAME = 'users';
+const MIN_LENGTH_PASSWORD = 8;
 
 async function getUsers(req, res, next) {
   try {
@@ -30,11 +31,25 @@ async function createUser(req, res, next) {
     username,
     email,
     password,
-    role
+    role,
   } = req.body;
   // Validate required fields
   if (!firstName || !lastName || !username || !email || !password || !role) {
     return next(new UsefulError('Incomplete form data', 400));
+  }
+  // Validate length password
+  if (password.length < MIN_LENGTH_PASSWORD) {
+    return next(new UsefulError('The password must have a minimum of 8 characters', 400));
+  }
+  // Validate that the email is not already registered
+  const validatedEmail = await getExistingField(COLLECTION_NAME, 'email', email);
+  if (validatedEmail) {
+    return next(new UsefulError('Email already registered', 400));
+  }
+  // Validate that the username is not already registered
+  const validatedUsername = await getExistingField(COLLECTION_NAME, 'username', username);
+  if (validatedUsername) {
+    return next(new UsefulError('Username already registered', 400));
   }
   try {
     const newUser = await createElement(COLLECTION_NAME, {
@@ -127,5 +142,5 @@ module.exports = {
   updateUser,
   deleteUser,
   loginUser,
-  validateField
+  validateField,
 };
