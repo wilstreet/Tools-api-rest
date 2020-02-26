@@ -15,7 +15,7 @@ async function getStores(req, res, next) {
     // Get all the stores
     if (!idAlly) {
       const stores = await getAll(COLLECTION_NAME);
-      res.json(stores);
+      return res.json(stores);
     }
     // Validate user
     const user = await getElementById('users', idAlly);
@@ -24,7 +24,7 @@ async function getStores(req, res, next) {
     }
     // Filter stores by ally
     const stores = await getAll(COLLECTION_NAME, { field: 'idAlly', value: idAlly });
-    res.json(stores);
+    return res.json(stores);
   } catch(err) {
     return next(err);
   }
@@ -36,7 +36,7 @@ async function getStoreById(req, res, next) {
     if (!store) {
       return next(new UsefulError('The store not exist!!', 404));
     }
-    res.json(store);
+    return res.json(store);
   } catch (err) {
     return next(err);
   }
@@ -64,7 +64,7 @@ async function createStore(req, res, next) {
       name,
       location
     });
-    res.status(201).json(newStore);
+    return res.status(201).json(newStore);
   } catch(err) {
     return next(err);
   }
@@ -80,7 +80,7 @@ async function updateStore(req, res, next) {
   }
   try {
     await updateElement(COLLECTION_NAME, req.params.id, updatedStore);
-    res.sendStatus(204);
+    return res.sendStatus(204);
   } catch(err) {
     return next(err);
   }
@@ -89,7 +89,7 @@ async function updateStore(req, res, next) {
 async function deleteStore(req, res, next) {
   try {
     await deleteElement(COLLECTION_NAME, req.params.id);
-    res.sendStatus(204);
+    return res.sendStatus(204);
   } catch(err) {
     return next(err);
   } 

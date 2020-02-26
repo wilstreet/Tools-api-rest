@@ -15,6 +15,6 @@ module.exports = (req, res, next) => {
       return next(new UsefulError('You are not allowed to access.', 403));
     }
     req.user = user;
-    next();
+    return next();
   })(req, res, next);
 };

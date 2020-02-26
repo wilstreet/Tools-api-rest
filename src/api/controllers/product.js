@@ -18,7 +18,7 @@ async function getProducts(req, res, next) {
   try {
     // Filter products by store
     const products = await getAll(COLLECTION_NAME, { field: 'idStore', value: idStore });
-    res.json(products);
+    return res.json(products);
   } catch(err) {
     return next(err);
   }
@@ -30,7 +30,7 @@ async function getProductById(req, res, next) {
     if (!product) {
       return next(new UsefulError('The product not exist!!', 404));
     }
-    res.json(product);
+    return res.json(product);
   } catch (err) {
     return next(err);
   }
@@ -60,7 +60,7 @@ async function createProduct(req, res, next) {
       count: count || 0,
       price
     });
-    res.status(201).json(newProduct);
+    return res.status(201).json(newProduct);
   } catch(err) {
     return next(err);
   }
@@ -76,7 +76,7 @@ async function updateProduct(req, res, next) {
   }
   try {
     await updateElement(COLLECTION_NAME, req.params.id, updatedProduct);
-    res.sendStatus(204);
+    return res.sendStatus(204);
   } catch(err) {
     return next(err);
   }
@@ -85,7 +85,7 @@ async function updateProduct(req, res, next) {
 async function deleteProduct(req, res, next) {
   try {
     await deleteElement(COLLECTION_NAME, req.params.id);
-    res.sendStatus(204);
+    return res.sendStatus(204);
   } catch(err) {
     next(err);
   } 

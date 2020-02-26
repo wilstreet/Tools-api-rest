@@ -17,7 +17,7 @@ const COLLECTION_NAME = 'users';
 async function getUsers(req, res, next) {
   try {
     const users = await getAll(COLLECTION_NAME);
-    res.json(users);
+    return res.json(users);
   } catch(err) {
     return next(err);
   }
@@ -46,7 +46,7 @@ async function createUser(req, res, next) {
       role,
       online: false,
     });
-    res.status(201).json(newUser);
+    return res.status(201).json(newUser);
   } catch (err) {
     return next(err);
   }
@@ -62,7 +62,7 @@ async function loginUser(req, res, next) {
         role: user.role,
         exp: Math.floor(Date.now() / 1000) + (600 * 600)
       }, jwtConfig.secretKey);
-      res.json({ token });
+      return res.json({ token });
     }
   })(req, res);
 }
@@ -73,7 +73,7 @@ async function getUserById(req, res, next) {
     if (!user) {
      return next(new UsefulError('The user not exist!!', 404));
     }
-    res.json(user);
+    return res.json(user);
   } catch (err) {
     return next(err);
   }
@@ -89,7 +89,7 @@ async function updateUser(req, res, next) {
   }
   try {
     await updateElement(COLLECTION_NAME, req.params.id, updatedUser);
-    res.sendStatus(204);
+    return res.sendStatus(204);
   } catch(err) {
     return next(err);
   }
@@ -98,7 +98,7 @@ async function updateUser(req, res, next) {
 async function deleteUser(req, res, next) {
   try {
     await deleteElement(COLLECTION_NAME, req.params.id);
-    res.sendStatus(204);
+    return res.sendStatus(204);
   } catch(err) {
     return next(err);
   } 
@@ -114,7 +114,7 @@ async function validateField(req, res, next) {
     if (fieldValue) {
       return next(new UsefulError(`Field ${req.params.field} already exists`, 400));
     }
-    res.json({ message: 'The field does not exist you can use it' });
+    return res.json({ message: 'The field does not exist you can use it' });
   } catch(err) {
     return next(err);
   }

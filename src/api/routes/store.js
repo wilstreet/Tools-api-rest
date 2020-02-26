@@ -13,12 +13,14 @@ const router = Router();
 module.exports = app => {
   app.use('/stores', router);
 
+  router.all(validateAuthentication);
+
   router.route('/')
-    .get(validateAuthentication, getStores)
-    .post(validateAuthentication, createStore);
+    .get(getStores)
+    .post(createStore);
 
   router.route('/:id')
-    .get(validateAuthentication, getStoreById)
-    .put(validateAuthentication, updateStore)
-    .delete(validateAuthentication, deleteStore);
+    .get(getStoreById)
+    .put(updateStore)
+    .delete(deleteStore);
 };
