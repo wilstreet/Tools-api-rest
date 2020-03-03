@@ -1,26 +1,17 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../.././private/firebase-admin.json');
-const { firebase } = require('../config');
 const UsefulError = require('../utils/useful-error');
-
-// Admin firebase initialize
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: firebase.databaseURL
-});
-// Firestore reference
-const db = admin.firestore();
+const { getDB } = require('../services/admin-firebase');
 
 // CRUD
 async function getAll(collection, where) {
   try {
     if (!where) {
-      const response = await db.collection(collection).get();
+      const response = await getDB().collection(collection).get();
       const parseData = response.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       return parseData;
     } else {
       const { field, value } = where;
-      const response = await db.collection(collection)
+      const response = await getDB().collection(collection)
         .where(field, '==', value)
         .get();
       const parseData = response.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -33,7 +24,7 @@ async function getAll(collection, where) {
 
 async function getElementById(collection, id) {
   try {
-    const doc = await db.collection(collection).doc(id).get();
+    const doc = await getDB().collection(collection).doc(id).get();
     if (!doc.exists) {
       return null;
     }
@@ -49,7 +40,7 @@ async function createElement(collection, data) {
     ...data,
   }
   try {
-    await db.collection(collection).add(element);
+    await getDB().collection(collection).add(element);
     return element;
   } catch(err) {
     throw new UsefulError(err);
@@ -58,7 +49,7 @@ async function createElement(collection, data) {
 
 async function updateElement(collection, id, data) {
   try {
-    await db.collection(collection).doc(id).update({
+    await getDB().collection(collection).doc(id).update({
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       ...data,
     });
@@ -69,7 +60,7 @@ async function updateElement(collection, id, data) {
 
 async function deleteElement(collection, id) {
   try {
-    await db.collection(collection).doc(id).delete();
+    await getDB().collection(collection).doc(id).delete();
   } catch(err) {
     throw new UsefulError(err);
   }
@@ -78,7 +69,7 @@ async function deleteElement(collection, id) {
 // Others features
 async function getExistingField(collection, field, value) {
   try {
-    const snapshot = await db.collection(collection)
+    const snapshot = await getDB().collection(collection)
       .where(field, "==", value).get();
     if (snapshot.empty) {
       return null;
@@ -105,7 +96,7 @@ async function getUserByEmailOrUsername(collection, emailOrUsername) {
 // Chat features
 async function getIdConversation(idCustomer, idAlly) {
   try {
-    const snapshot = await db.collection('messages')
+    const snapshot = await getDB().collection('messages')
       .where('idCustomer', '==', idCustomer)
       .where('idAlly', '==', idAlly)
       .get();
@@ -124,7 +115,7 @@ async function getAllMessages(idCustomer, idAlly) {
     if (!idConversation) {
       return null;
     }
-    const messages =  await db.collection('messages').doc(idConversation).get();
+    const messages =  await getDB().collection('messages').doc(idConversation).get();
     if (messages.empty) {
       return [];
     }
@@ -143,9 +134,9 @@ async function addMessage(idCustomer, idAlly, messages) {
   try {
     const idConversation = await getIdConversation(idCustomer, idAlly);
     if (!idConversation) {
-      await db.collection('messages').add(element);
+      await getDB().collection('messages').add(element);
     } else {
-      await db.collection('messages').doc(idConversation).update({ messages });
+      await getDB().collection('messages').doc(idConversation).update({ messages });
     }
     return element;
   } catch(err) {

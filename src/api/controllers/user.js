@@ -1,122 +1,147 @@
 const argon2 = require('argon2');
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
-const { jwtConfig } = require('../.././config');
-const UsefulError = require('../.././utils/useful-error');
-const {
-  getAll,
-  createElement,
-  getElementById,
-  updateElement,
-  deleteElement,
-  getExistingField,
-} = require('../.././models/model-firebase');
+const path = require('path');
+const { getAuth, getDB } = require(path.resolve('src/services/admin-firebase'));
+const { updateElement, deleteElement } = require(path.resolve('src/models/model-firebase'));
+const UsefulError = require(path.resolve('src/utils/useful-error'));
 
-const COLLECTION_NAME = 'users';
-const MIN_LENGTH_PASSWORD = 8;
+const MIN_LENGTH_PASSWORD = 6;
 
-async function getUsers(req, res, next) {
-  try {
-    const users = await getAll(COLLECTION_NAME);
-    return res.json(users);
-  } catch(err) {
-    return next(err);
+// Get name of collection according to role
+function collectionName(role) {
+  switch (role) {
+    case 'customer':
+      return 'customers';
+    case 'ally':
+      return 'allies';
+    default:
+      return null;
   }
 }
 
 async function createUser(req, res, next) {
-  const {
+  const { 
     firstName,
     lastName,
-    username,
     email,
     password,
     role,
   } = req.body;
-  // Validate required fields
-  if (!firstName || !lastName || !username || !email || !password || !role) {
-    return next(new UsefulError('Incomplete form data', 400));
-  }
-  // Validate length password
-  if (password.length < MIN_LENGTH_PASSWORD) {
-    return next(new UsefulError('The password must have a minimum of 8 characters', 400));
-  }
-  // Validate that the email is not already registered
-  const validatedEmail = await getExistingField(COLLECTION_NAME, 'email', email);
-  if (validatedEmail) {
-    return next(new UsefulError('Email already registered', 400));
-  }
-  // Validate that the username is not already registered
-  const validatedUsername = await getExistingField(COLLECTION_NAME, 'username', username);
-  if (validatedUsername) {
-    return next(new UsefulError('Username already registered', 400));
-  }
   try {
-    const newUser = await createElement(COLLECTION_NAME, {
-      firstName,
-      lastName,
-      username,
+    // Validate required fields
+    if (!email || !firstName || !lastName || !password || !role) {
+      return next(new UsefulError('The form is incomplete', 422));
+    }
+    // Validate minimum length password
+    if (password.length < MIN_LENGTH_PASSWORD) {
+      return next(new UsefulError('The password must be a string with at least 6 characters.', 422));
+    }
+    // Verify valid role
+    const collection = collectionName(role);
+    if (!collection) 
+      return new UsefulError('Invalid role (customer or ally)', 422);
+    // Create user firebase authentication
+    const { uid } = await getAuth().createUser({
       email,
       password: await argon2.hash(password),
+      displayName: `${firstName} ${lastName}`,
+    });
+    const user = {
+      displayName: `${firstName} ${lastName}`,
+      email,
       role,
       online: false,
-    });
-    return res.status(201).json(newUser);
-  } catch (err) {
-    return next(err);
-  }
-}
-
-async function loginUser(req, res, next) {
-  passport.authenticate('local', { session: false }, (err, user) => {
-    if (err || !user) {
-      return next(new UsefulError('Username or password not correct', 403));
-    } else {
-      const token = jwt.sign({
-        sub: user.id,
-        role: user.role,
-        exp: Math.floor(Date.now() / 1000) + (600 * 600)
-      }, jwtConfig.secretKey);
-      return res.json({ token });
+      createdAt: new Date().toString(),
+    };
+    // Create document according to role
+    await getDB().collection(collection).doc(uid).set(user);
+    return res.status(201).json(user);
+  } catch(err) {
+    // Error email already exists
+    if (err.code === 'auth/email-already-exists') {
+      return next(new UsefulError(err.message, 409));
     }
-  })(req, res);
+    // Others errors
+    return next(new UsefulError(err.message));
+  }
 }
 
 async function getUserById(req, res, next) {
   try {
-    const user = await getElementById(COLLECTION_NAME, req.params.id);
-    if (!user) {
-     return next(new UsefulError('The user not exist!!', 404));
+    const { id } = req.params;
+    const user = await getAuth().getUser(id);
+    res.json(user);
+  } catch(err) {
+    // Error user not found
+    if (err.code === 'auth/user-not-found') {
+      return next(new UsefulError(err.message, 404));
     }
-    return res.json(user);
-  } catch (err) {
-    return next(err);
+    // Others errors
+    return next(new UsefulError(err.message));
   }
 }
 
 async function updateUser(req, res, next) {
-  const updatedUser = {};
-  // Validate the fields to update
-  for (let prop in req.body) {
-    if (prop === 'firstName' || prop === 'lastName' || prop === 'username' || prop === 'email') {
-      updatedUser[prop] = req.body[prop];
-    }
+  const { email, firstName, lastName, role } = req.body;
+  const { id } = req.params;
+  // The role is required to update
+  if (!role)
+    return next(new UsefulError('The role is required (customer or ally)', 422));  
+  // Verify valid role
+  const collection = collectionName(role);
+  if (!collection) 
+    return next(new UsefulError('Invalid role (customer or ally)', 422));
+  // Validate required fields
+  if (!email || !firstName || !lastName) {
+    return next(new UsefulError('The form is incomplete', 422));
   }
   try {
-    await updateElement(COLLECTION_NAME, req.params.id, updatedUser);
+    // Update user firebase authentication
+    await getAuth().updateUser(id, { email, displayName: `${firstName} ${lastName}` });
+    // Update user according to role
+    await updateElement(collection, id, { email, displayName: `${firstName} ${lastName}` });
     return res.sendStatus(204);
   } catch(err) {
-    return next(err);
+    // Error user not found
+    if (err.code === 'auth/user-not-found') {
+      return next(new UsefulError(err.message, 404));
+    }
+    // Error invalid email
+    if (err.code === 'auth/invalid-email') {
+      return next(new UsefulError(err.message, 422));
+    }
+    // Error email already exists
+    if (err.code === 'auth/email-already-exists') {
+      return next(new UsefulError(err.message, 409));
+    }
+    // Others errors
+    return next(new UsefulError(err.message));
   }
 }
 
 async function deleteUser(req, res, next) {
+  const { role } = req.body;
+  const { id } = req.params;
   try {
-    await deleteElement(COLLECTION_NAME, req.params.id);
+     // The role is required to update
+    if (!role)
+      return next(new UsefulError('The role is required (customer or ally)', 422));  
+    // Verify valid role
+    const collection = collectionName(role);
+    if (!collection) 
+      return next(new UsefulError('Invalid role (customer or ally)', 422));
+    // Delete user firebase authentication
+    await getAuth().deleteUser(id);
+    // Delete user according to role
+    await deleteElement(collection, id);
     return res.sendStatus(204);
   } catch(err) {
-    return next(err);
-  } 
+    // Error user not found
+    if (err.code === 'auth/user-not-found') {
+      return next(new UsefulError(err.message, 404));
+    }
+    // Others errors
+    return next(new UsefulError(err.message));
+  }
 }
 
 async function validateField(req, res, next) {
@@ -135,12 +160,10 @@ async function validateField(req, res, next) {
   }
 }
 
+
 module.exports = {
-  getUsers,
-  getUserById,
   createUser,
+  getUserById,
   updateUser,
-  deleteUser,
-  loginUser,
-  validateField,
+  deleteUser
 };

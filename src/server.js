@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+
 const { port, api } = require('./config');
 const routes = require('./api');
-const passportInitialize = require('./services/passport');
 
 const app = express();
 
@@ -10,9 +10,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Pasport
-passportInitialize(app);
 
 // Routes
 app.use(api.prefix, routes());

@@ -6,14 +6,11 @@ const {
   updateStore,
   deleteStore,
 } = require('../controllers/store');
-const validateAuthentication = require('../middlewares/authentication');
 
 const router = Router();
 
 module.exports = app => {
   app.use('/stores', router);
-
-  router.all(validateAuthentication);
 
   router.route('/')
     .get(getStores)
