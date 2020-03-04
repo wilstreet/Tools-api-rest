@@ -38,7 +38,7 @@ async function createUser(req, res, next) {
     // Verify valid role
     const collection = collectionName(role);
     if (!collection) 
-      return new UsefulError('Invalid role (customer or ally)', 422);
+      return next(new UsefulError('Invalid role (customer or ally)', 422));
     // Create user firebase authentication
     const { uid } = await getAuth().createUser({
       email,
