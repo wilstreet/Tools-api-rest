@@ -22,6 +22,7 @@ async function getAll(collection, where) {
   }
 };
 
+
 async function getElementById(collection, id) {
   try {
     const doc = await getDB().collection(collection).doc(id).get();
