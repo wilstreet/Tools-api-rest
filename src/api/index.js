@@ -2,7 +2,7 @@ const { Router } = require('express');
 const stores = require('./routes/store');
 const products = require('./routes/product');
 const customers = require('./routes/customer');
-const allys = require('./routes/ally');
+const allies = require('./routes/ally');
 
 
 module.exports = () => {
@@ -10,6 +10,6 @@ module.exports = () => {
   stores(app);
   products(app);
   customers(app);
-  allys(app);
+  allies(app);
   return app;
 }

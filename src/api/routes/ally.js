@@ -1,14 +1,19 @@
 const { Router } = require('express');
-
+const { 
+  getAllies,
+  createAlly,
+  getAllyById,
+  updateAlly,
+  deleteAlly
+} =require('../controllers/ally');
 
 const router = Router();
-const {getAlly,createAlly,getAllyById,updateAlly,deleteAlly} =require('../controllers/ally');
 
 module.exports = app => {
-    app.use('/allys', router);
+    app.use('/allies', router);
   
     router.route('/')
-      .get(getAlly)
+      .get(getAllies)
       .post(createAlly);
     router.route('/:id')
       .get(getAllyById)
