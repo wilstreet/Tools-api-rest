@@ -26,6 +26,7 @@ async function getCustomers(req, res, next) {
       const customer = await getElementById(COLLECTION_NAME, req.params.id);
       if (!customer) {
         return next(new UsefulError('The customer not exist!!', 404));
+        
       }
       return res.json(customer);
     } catch (err) {
