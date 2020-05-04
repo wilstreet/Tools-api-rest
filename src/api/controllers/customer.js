@@ -1,19 +1,14 @@
-const path =require ('path');
-
 const{
-getAll,
-getElementById,
-createElement,
-updateElement,
-deleteElement,
+  getAll,
+  getElementById,
+  createElement,
+  updateElement,
+  deleteElement,
 }= require('../../models/model-firebase');
 const COLLECTION_NAME = 'customers'
 
-
 async function getCustomers(req, res, next) {
-   
     try {
-      
       const customers = await getAll(COLLECTION_NAME);
       return res.json(customers);
     } catch(err) {
@@ -80,8 +75,12 @@ async function getCustomers(req, res, next) {
     } 
   }
 
-
-
-  module.exports={getCustomerById,getCustomers,createCustomer,deleteCustomer,updateCustomer};
+  module.exports={
+    getCustomerById,
+    getCustomers,
+    createCustomer,
+    deleteCustomer,
+    updateCustomer
+  };
 
 
